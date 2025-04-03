@@ -1,129 +1,130 @@
 const express = require("express");
-const bcrypt = require("bcryptjs");
-const jwt = require("jsonwebtoken");
-const multer = require("multer");
+const authenticateToken = require("../middleware/authenticateToken");
 const User = require("../models/userModel");
+const multer = require("multer");
 const path = require("path");
-const fs = require("fs");
 
 const router = express.Router();
-const JWT_SECRET = process.env.JWT_SECRET || "your_jwt_secret_key"; // Fallback for JWT secret
 
-// Configure multer for file uploads
+// Configure multer for profile picture uploads
 const storage = multer.diskStorage({
-  destination: function (req, file, cb) {
-    const uploadsDir = path.join(__dirname, "../uploads");
-    if (!fs.existsSync(uploadsDir)) {
-      fs.mkdirSync(uploadsDir, { recursive: true }); // Create the uploads directory if it doesn't exist
-    }
-    cb(null, uploadsDir);
+  destination: (req, file, cb) => {
+    cb(null, "uploads/profilePics/");
   },
-  filename: function (req, file, cb) {
+  filename: (req, file, cb) => {
     const uniqueSuffix = Date.now() + "-" + Math.round(Math.random() * 1e9);
-    cb(null, uniqueSuffix + path.extname(file.originalname)); // Unique filename
+    cb(null, uniqueSuffix + path.extname(file.originalname));
   },
 });
+
+const fileFilter = (req, file, cb) => {
+  const allowedTypes = ["image/jpeg", "image/png", "image/gif"];
+  if (allowedTypes.includes(file.mimetype)) {
+    cb(null, true);
+  } else {
+    cb(new Error("Only image files are allowed"), false);
+  }
+};
 
 const upload = multer({
   storage: storage,
-  limits: { fileSize: 5 * 1024 * 1024 }, // Limit file size to 5MB
+  limits: { fileSize: 5 * 1024 * 1024 }, // 5MB limit
+  fileFilter: fileFilter,
 });
 
-// 👤 Register User
-router.post("/register", upload.single("profilePic"), async (req, res) => {
+// Get all users (admin only)
+router.get("/", authenticateToken, async (req, res) => {
   try {
-    const { username, email, password } = req.body;
-    const profilePic = req.file ? req.file.path : "";
-
-    // Check if user already exists
-    const existingUser = await User.findOne({ $or: [{ username }, { email }] });
-    if (existingUser) {
-      return res
-        .status(400)
-        .json({ error: "Username or email already exists" });
+    // Check if user is admin
+    if (req.user.role !== "admin") {
+      return res.status(403).json({ error: "Admin access required" });
     }
 
-    // Hash the password
-    const hashedPassword = await bcrypt.hash(password, 10);
+    const users = await User.find()
+      .select("username email role createdAt") // Select only needed fields
+      .sort({ createdAt: -1 }); // Sort by creation date descending
 
-    // Create a new user
-    const newUser = new User({
-      username,
-      email,
-      password: hashedPassword,
-      profilePic,
-    });
-
-    await newUser.save();
-
-    res.status(201).json({ message: "User registered successfully" });
-  } catch (error) {
-    console.error("Registration Error:", error);
-    res.status(500).json({ error: "Server error", details: error.message });
+    res.json(users);
+  } catch (err) {
+    console.error("Error fetching users:", err);
+    res.status(500).json({ error: "Server error", details: err.message });
   }
 });
 
-// User Login
-router.post("/login", async (req, res) => {
+// Get current user details (for role checking)
+router.get("/me", authenticateToken, async (req, res) => {
   try {
-    const { username, password } = req.body;
-
-    // Find the user
-    const user = await User.findOne({ username });
-    if (!user) {
-      return res.status(400).json({ error: "User not found" });
-    }
-
-    // Check if the password is valid
-    const isPasswordValid = await bcrypt.compare(password, user.password);
-    if (!isPasswordValid) {
-      return res.status(400).json({ error: "Incorrect password" });
-    }
-
-    // Generate a JWT token
-    const token = jwt.sign(
-      { userId: user._id, username: user.username },
-      JWT_SECRET,
-      {
-        expiresIn: "7d",
-      }
+    const user = await User.findById(req.user._id).select(
+      "username email role"
     );
-
-    res.json({ token });
-  } catch (error) {
-    console.error("Login Error:", error);
-    res.status(500).json({ error: "Server error", details: error.message });
-  }
-});
-
-// Get User Profile
-router.get("/profile", async (req, res) => {
-  try {
-    // Extract token from the Authorization header
-    const token = req.headers.authorization?.split(" ")[1];
-    if (!token) {
-      return res.status(401).json({ error: "Authorization token missing" });
-    }
-
-    // Verify the token
-    const decoded = jwt.verify(token, JWT_SECRET);
-
-    // Find the user
-    const user = await User.findOne({ username: decoded.username });
     if (!user) {
       return res.status(404).json({ error: "User not found" });
     }
-
-    // Return user profile data
-    res.json({
-      username: user.username,
-      email: user.email,
-      profilePic: user.profilePic,
-    });
-  } catch (error) {
-    console.error("Profile Fetch Error:", error);
-    res.status(500).json({ error: "Server error", details: error.message });
+    res.json(user);
+  } catch (err) {
+    console.error("Error fetching user:", err);
+    res.status(500).json({ error: "Server error", details: err.message });
   }
 });
+
+// Get user profile
+router.get("/profile", authenticateToken, async (req, res) => {
+  try {
+    const user = await User.findById(req.user._id)
+      .select("-password")
+      .populate(
+        "orders",
+        "itemsPrice shippingPrice totalPrice orderStatus createdAt items"
+      );
+    if (!user) {
+      return res.status(404).json({ error: "User not found" });
+    }
+    console.log("Fetched user profile:", user);
+    res.json(user);
+  } catch (err) {
+    console.error("Error fetching profile:", err);
+    res.status(500).json({ error: "Server error", details: err.message });
+  }
+});
+
+// Update user profile
+router.put(
+  "/profile",
+  authenticateToken,
+  upload.single("profilePic"),
+  async (req, res) => {
+    try {
+      console.log("Uploaded file:", req.file);
+      const { username, email } = req.body;
+      const updates = {};
+
+      if (username) updates.username = username;
+      if (email) updates.email = email;
+      if (req.file)
+        updates.profilePic = `/uploads/profilePics/${req.file.filename}`;
+
+      const user = await User.findByIdAndUpdate(req.user._id, updates, {
+        new: true,
+        runValidators: true,
+      }).select("-password");
+
+      if (!user) {
+        return res.status(404).json({ error: "User not found" });
+      }
+
+      console.log("Updated user with profilePic:", user.profilePic);
+      res.json(user);
+    } catch (err) {
+      console.error("Error updating profile:", err);
+      if (err.code === 11000) {
+        return res.status(400).json({
+          error: "Username or email already exists",
+          field: err.keyValue,
+        });
+      }
+      res.status(500).json({ error: "Server error", details: err.message });
+    }
+  }
+);
 
 module.exports = router;

@@ -1,381 +1,390 @@
 import React, { useState, useEffect } from "react";
 import axios from "axios";
-import { FaPlus, FaList } from "react-icons/fa"; // Icons for sidebar
+import { useNavigate } from "react-router-dom";
+import Sidebar from "../components/Sidebar";
+import AddProductForm from "../components/AddProductForm";
+import ProductsView from "../components/ProductsView";
+import Orders from "../components/Orders";
+import RevenueChart from "../components/RevenueChart";
+import UsersManagement from "../context/UsersManagement";
+import InventoryStatus from "../components/InventoryStatus";
+import {
+    FaSpinner, FaExclamationTriangle, FaChartLine, FaBoxOpen, FaUsers, FaShoppingCart
+} from "react-icons/fa";
+import { toast } from "react-toastify";
+import "react-toastify/dist/ReactToastify.css";
 
 const Dashboard = () => {
     const [products, setProducts] = useState([]);
+    const [orders, setOrders] = useState([]);
+    const [users, setUsers] = useState([]);
+    const [revenueData, setRevenueData] = useState({ labels: [], datasets: [] });
     const [newProduct, setNewProduct] = useState({
-        name: "",
-        price: "",
-        image: "",
-        description: "",
-        quantity: "",
-        isNewArrival: false,
-        isTopSelling: false,
+        name: "", brand: "", price: "", image: "", description: "", quantity: "",
+        isNewArrival: false, isTopSelling: false, networkTechnology: "", displaySize: "",
+        displayResolution: "", OS: "", CPU: "", RAM: "", internalMemory: "", primaryCamera: "",
+        battery: "", approxPriceEUR: "", category: "smartphone", discount: 0, sku: ""
     });
     const [editingProduct, setEditingProduct] = useState(null);
-    const [view, setView] = useState("add");
+    const [view, setView] = useState("dashboard");
+    const [loading, setLoading] = useState(false);
+    const [error, setError] = useState(null);
+    const [userRole, setUserRole] = useState(null);
+    const navigate = useNavigate();
 
-    // Fetch products from backend
     useEffect(() => {
-        axios.get("http://localhost:5000/api/products")
-            .then((response) => setProducts(response.data))
-            .catch((error) => console.error("Error fetching products:", error));
-    }, []);
-
-    // Handle form input changes
-    const handleChange = (e) => {
-        const { name, value, type, checked } = e.target;
-        if (editingProduct) {
-            setEditingProduct({
-                ...editingProduct,
-                [name]: type === "checkbox" ? checked : value
-            });
-        } else {
-            setNewProduct({
-                ...newProduct,
-                [name]: type === "checkbox" ? checked : value
-            });
-        }
-    };
-
-    // Remove background from image
-    const removeImageBackground = async (imageUrl) => {
-        const encodedParams = new URLSearchParams();
-        encodedParams.set("image_url", imageUrl);
-
-        const options = {
-            method: "POST",
-            url: "https://remove-background18.p.rapidapi.com/public/remove-background",
-            headers: {
-                "x-rapidapi-key": "6902e3bf33msh7eb784f595bcf80p11fabajsncaa1c57a21e0",
-                "x-rapidapi-host": "remove-background18.p.rapidapi.com",
-                "Content-Type": "application/x-www-form-urlencoded",
-                accept: "application/json"
-            },
-            data: encodedParams,
+        const fetchUserRole = async () => {
+            try {
+                const token = localStorage.getItem("token");
+                if (!token) return navigate("/login");
+                const response = await axios.get("http://localhost:5000/api/users/me", {
+                    headers: { Authorization: `Bearer ${token}` },
+                });
+                setUserRole(response.data.role);
+                if (response.data.role !== "admin") navigate("/404-route");
+                else {
+                    fetchInitialData();
+                }
+            } catch (err) {
+                console.error("Error fetching user role:", err);
+                navigate("/login");
+            }
         };
+        fetchUserRole();
+    }, [navigate]);
 
+    const fetchInitialData = async () => {
         try {
-            const response = await axios.request(options);
-
-            if (response.data && response.data.url) {
-                return response.data.url;
-            } else {
-                console.error("Unexpected API Response:", response.data);
-                return null;
-            }
+            setLoading(true);
+            await Promise.all([
+                fetchProducts(),
+                fetchOrders(),
+                fetchUsers(),
+                fetchRevenueData()
+            ]);
         } catch (error) {
-            console.error("Background Removal API Error:", error.response?.data || error.message);
-            return null;
+            setError("Failed to load initial data.");
+            toast.error("Failed to load initial data");
+        } finally {
+            setLoading(false);
         }
     };
 
-    // Add product to backend
-    const handleAddProduct = async (event) => {
-        event.preventDefault();
+    const fetchProducts = async () => {
         try {
-            const token = localStorage.getItem("token");
-            if (!token) {
-                console.log("No token found. Please log in.");
-                return;
-            }
+            const response = await axios.get("http://localhost:5000/api/products", {
+                headers: { Authorization: `Bearer ${localStorage.getItem("token")}` },
+            });
+            setProducts(response.data);
+        } catch (error) {
+            setError("Failed to load products.");
+            toast.error("Failed to load products");
+        }
+    };
 
-            // Ensure image background removal does not break the request
-            let processedImage = await removeImageBackground(newProduct.image);
-            if (!processedImage) {
-                console.error("Background removal failed, using original image.");
-                processedImage = newProduct.image; // Fallback to original
-            }
+    const fetchOrders = async () => {
+        try {
+            const response = await axios.get("http://localhost:5000/api/orders", {
+                headers: { Authorization: `Bearer ${localStorage.getItem("token")}` },
+            });
+            setOrders(response.data);
+        } catch (error) {
+            setError("Failed to load orders.");
+            toast.error("Failed to load orders");
+        }
+    };
 
-            const productData = { ...newProduct, image: processedImage };
+    const fetchUsers = async () => {
+        try {
+            const response = await axios.get("http://localhost:5000/api/users", {
+                headers: { Authorization: `Bearer ${localStorage.getItem("token")}` },
+            });
+            setUsers(response.data);
+        } catch (error) {
+            setError("Failed to load users.");
+            toast.error("Failed to load users");
+        }
+    };
 
-            const response = await axios.post(
-                "http://localhost:5000/api/products",
-                productData,
-                {
-                    headers: {
-                        Authorization: `Bearer ${token}`,
-                        "Content-Type": "application/json",
-                    },
-                }
-            );
-
-            console.log("Product added successfully:", response.data);
-            setProducts([...products, response.data]);
-
-            // Clear the form
-            setNewProduct({
-                name: "",
-                price: "",
-                image: "",
-                description: "",
-                quantity: "",
-                isNewArrival: false,
-                isTopSelling: false,
+    const fetchRevenueData = async () => {
+        try {
+            const response = await axios.get("http://localhost:5000/api/orders/revenue", {
+                headers: { Authorization: `Bearer ${localStorage.getItem("token")}` },
+            });
+            const { labels, data } = response.data;
+            setRevenueData({
+                labels,
+                datasets: [{
+                    label: "Revenue (USD)",
+                    data,
+                    borderColor: "rgba(75, 192, 192, 1)",
+                    backgroundColor: "rgba(75, 192, 192, 0.2)",
+                    fill: true,
+                }],
             });
         } catch (error) {
-            console.error("Error adding product:", error.response?.data || error.message);
+            setError("Failed to load revenue data.");
+            toast.error("Failed to load revenue data");
         }
     };
 
-    // Edit product in backend
-    const handleEditProduct = async (event) => {
-        event.preventDefault();
-        try {
-            const token = localStorage.getItem("token");
-            if (!token) {
-                console.log("No token found. Please log in.");
-                return;
-            }
-
-            // Ensure image background removal does not break the request
-            let processedImage = await removeImageBackground(editingProduct.image);
-            if (!processedImage) {
-                console.error("Background removal failed, using original image.");
-                processedImage = editingProduct.image;
-            }
-
-            const productData = { ...editingProduct, image: processedImage };
-
-            const response = await axios.put(
-                `http://localhost:5000/api/products/${editingProduct._id}`,
-                productData,
-                {
-                    headers: {
-                        Authorization: `Bearer ${token}`,
-                        "Content-Type": "application/json",
-                    },
-                }
-            );
-
-            console.log("Product updated successfully:", response.data);
-
-            // Update the products list
-            setProducts(products.map(product =>
-                product._id === editingProduct._id ? response.data : product
-            ));
-
-            // Clear the editing state
-            setEditingProduct(null);
-        } catch (error) {
-            console.error("Error updating product:", error.response?.data || error.message);
-        }
-    };
-
-    // Delete product from backend
     const handleDeleteProduct = async (productId) => {
+        if (!window.confirm("Are you sure you want to delete this product?")) return;
+
+        setLoading(true);
+        setError(null);
         try {
             const token = localStorage.getItem("token");
-            if (!token) {
-                console.log("No token found. Please log in.");
-                return;
-            }
-
-            // Make the DELETE request to your backend API
-            const response = await axios.delete(`http://localhost:5000/api/products/${productId}`, {
-                headers: {
-                    Authorization: `Bearer ${token}`,
-                },
+            await axios.delete(`http://localhost:5000/api/products/${productId}`, {
+                headers: { Authorization: `Bearer ${token}` },
             });
-
-            // If the product was deleted successfully, update the state to remove the deleted product
-            if (response.status === 200) {
-                setProducts(products.filter(product => product._id !== productId));
-                console.log("Product deleted successfully:", response.data);
-            }
+            setProducts(products.filter(product => product._id !== productId));
+            toast.success("Product deleted successfully");
         } catch (error) {
-            console.error("Error deleting product:", error.response?.data || error.message);
+            setError("Failed to delete product.");
+            toast.error("Failed to delete product");
+        } finally {
+            setLoading(false);
         }
     };
 
-    // Handle edit button click
-    const handleEditClick = (product) => {
-        setEditingProduct(product);
-        setView("add");
+    const handleUpdateOrderStatus = async (orderId, newStatus) => {
+        try {
+            setLoading(true);
+            const token = localStorage.getItem("token");
+            await axios.put(
+                `http://localhost:5000/api/orders/${orderId}`,
+                { status: newStatus },
+                { headers: { Authorization: `Bearer ${token}` } }
+            );
+            setOrders(orders.map(order =>
+                order._id === orderId ? { ...order, orderStatus: newStatus } : order
+            ));
+            toast.success("Order status updated successfully");
+        } catch (error) {
+            setError("Failed to update order status.");
+            toast.error("Failed to update order status");
+        } finally {
+            setLoading(false);
+        }
     };
+
+    const handleUpdateUserRole = async (userId, newRole) => {
+        if (!window.confirm(`Change this user's role to ${newRole}?`)) return;
+
+        try {
+            setLoading(true);
+            const token = localStorage.getItem("token");
+            await axios.put(
+                `http://localhost:5000/api/users/${userId}/role`,
+                { role: newRole },
+                { headers: { Authorization: `Bearer ${token}` } }
+            );
+            setUsers(users.map(user =>
+                user._id === userId ? { ...user, role: newRole } : user
+            ));
+            toast.success("User role updated successfully");
+        } catch (error) {
+            setError("Failed to update user role.");
+            toast.error("Failed to update user role");
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    const handleDeleteUser = async (userId) => {
+        if (!window.confirm("Are you sure you want to delete this user?")) return;
+
+        try {
+            setLoading(true);
+            const token = localStorage.getItem("token");
+            await axios.delete(`http://localhost:5000/api/users/${userId}`, {
+                headers: { Authorization: `Bearer ${token}` },
+            });
+            setUsers(users.filter(user => user._id !== userId));
+            toast.success("User deleted successfully");
+        } catch (error) {
+            setError("Failed to delete user.");
+            toast.error("Failed to delete user");
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    const refreshData = () => {
+        fetchInitialData();
+    };
+
+    const totalProducts = products.length;
+    const totalOrders = orders.length;
+    const revenue = orders.reduce((sum, order) => sum + (order.totalPrice || 0), 0);
+    const totalRevenue = revenue / 100;
+    const totalUsers = users.length;
+
+    if (userRole === null) {
+        return (
+            <div className="flex justify-center items-center min-h-screen">
+                <FaSpinner className="animate-spin text-4xl text-blue-500" />
+            </div>
+        );
+    }
+
+    if (userRole !== "admin") return null;
 
     return (
-        <div className="flex min-h-screen bg-white">
-            <div className="w-64 bg-gray-50 p-6 border-r border-gray-200">
-                <h2 className="text-xl font-bold mb-8 text-gray-800">Admin Dashboard</h2>
-                <ul className="space-y-3">
-                    <li
-                        className={`flex items-center p-3 cursor-pointer rounded-lg transition-all ${view === "add" ? "bg-blue-500 text-white" : "text-gray-700 hover:bg-gray-200"
-                            }`}
-                        onClick={() => setView("add")}
-                    >
-                        <FaPlus className="mr-3" />
-                        Add Products
-                    </li>
-                    <li
-                        className={`flex items-center p-3 cursor-pointer rounded-lg transition-all ${view === "show" ? "bg-blue-500 text-white" : "text-gray-700 hover:bg-gray-200"
-                            }`}
-                        onClick={() => setView("show")}
-                    >
-                        <FaList className="mr-3" />
-                        Show Products
-                    </li>
-                </ul>
-            </div>
+        <div className="min-h-screen bg-gray-100">
+            <div className="flex">
+                <Sidebar
+                    view={view}
+                    setView={setView}
+                />
 
-            <div className="flex-1 p-8 bg-gray-50">
-                {view === "add" ? (
-                    <form onSubmit={editingProduct ? handleEditProduct : handleAddProduct} className="max-w-3xl mx-auto bg-white p-8 rounded-xl shadow-lg">
-                        <h3 className="text-2xl font-bold mb-8 text-gray-800">
-                            {editingProduct ? "Edit Product" : "Add New Product"}
-                        </h3>
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                            <div>
-                                <label className="block text-sm font-medium text-gray-700 mb-2">Product Name</label>
-                                <input
-                                    type="text"
-                                    name="name"
-                                    value={editingProduct ? editingProduct.name : newProduct.name}
-                                    onChange={handleChange}
-                                    placeholder="Product Name"
-                                    className="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                                    required
-                                />
-                            </div>
-                            <div>
-                                <label className="block text-sm font-medium text-gray-700 mb-2">Price</label>
-                                <input
-                                    type="number"
-                                    name="price"
-                                    value={editingProduct ? editingProduct.price : newProduct.price}
-                                    onChange={handleChange}
-                                    placeholder="Price"
-                                    className="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                                    required
-                                />
-                            </div>
-                            <div className="md:col-span-2">
-                                <label className="block text-sm font-medium text-gray-700 mb-2">Image URL</label>
-                                <input
-                                    type="text"
-                                    name="image"
-                                    value={editingProduct ? editingProduct.image : newProduct.image}
-                                    onChange={handleChange}
-                                    placeholder="Image URL"
-                                    className="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                                    required
-                                />
-                            </div>
-                            <div className="md:col-span-2">
-                                <label className="block text-sm font-medium text-gray-700 mb-2">Description</label>
-                                <textarea
-                                    name="description"
-                                    value={editingProduct ? editingProduct.description : newProduct.description}
-                                    onChange={handleChange}
-                                    placeholder="Description"
-                                    className="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                                    rows="4"
-                                    required
-                                />
-                            </div>
-                            <div>
-                                <label className="block text-sm font-medium text-gray-700 mb-2">Quantity</label>
-                                <input
-                                    type="number"
-                                    name="quantity"
-                                    value={editingProduct ? editingProduct.quantity : newProduct.quantity}
-                                    onChange={handleChange}
-                                    placeholder="Quantity"
-                                    className="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                                    required
-                                />
-                            </div>
-                            <div className="flex items-center space-x-4">
-                                <label className="flex items-center text-sm text-gray-700">
-                                    <input
-                                        type="checkbox"
-                                        name="isNewArrival"
-                                        checked={editingProduct ? editingProduct.isNewArrival : newProduct.isNewArrival}
-                                        onChange={handleChange}
-                                        className="mr-2"
-                                    />
-                                    New Arrival
-                                </label>
-                                <label className="flex items-center text-sm text-gray-700">
-                                    <input
-                                        type="checkbox"
-                                        name="isTopSelling"
-                                        checked={editingProduct ? editingProduct.isTopSelling : newProduct.isTopSelling}
-                                        onChange={handleChange}
-                                        className="mr-2"
-                                    />
-                                    Top Selling
-                                </label>
-                            </div>
+                <main className="flex-1 p-6 overflow-y-auto">
+                    {loading && (
+                        <div className="fixed inset-0 bg-black bg-opacity-50 flex justify-center items-center z-50">
+                            <FaSpinner className="animate-spin text-4xl text-white" />
                         </div>
-                        <button
-                            type="submit"
-                            className="w-full mt-6 bg-blue-500 text-white py-3 rounded-lg hover:bg-blue-600 transition-colors"
-                        >
-                            {editingProduct ? "Update Product" : "Add Product"}
-                        </button>
-                        {editingProduct && (
-                            <button
-                                type="button"
-                                onClick={() => setEditingProduct(null)}
-                                className="w-full mt-4 bg-gray-500 text-white py-3 rounded-lg hover:bg-gray-600 transition-colors"
-                            >
-                                Cancel Edit
-                            </button>
-                        )}
-                    </form>
-                ) : (
-                    // Product List
-                    <div className="max-w-7xl mx-auto">
-                        <h3 className="text-2xl font-bold mb-8 text-gray-800">Products List</h3>
-                        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
-                            {products.map((product) => (
-                                <div
-                                    key={product._id}
-                                    className="bg-white p-5 rounded-xl shadow-md hover:shadow-lg transition-shadow"
-                                >
-                                    <img
-                                        src={product.image || "https://via.placeholder.com/150"}
-                                        alt={product.name}
-                                        className="w-full h-48 object-cover rounded-lg mb-4"
-                                        onError={(e) => {
-                                            e.target.src = "https://via.placeholder.com/150";
-                                        }}
-                                    />
-                                    <h4 className="text-lg font-semibold text-gray-800 mb-2">{product.name}</h4>
-                                    <p className="text-sm text-gray-600 mb-4">${(product.price / 100).toFixed(2)}</p>
-                                    <div className="flex gap-2 mb-4">
-                                        {product.isNewArrival && (
-                                            <span className="bg-green-500 text-white px-2 py-1 text-xs rounded">
-                                                New Arrival
-                                            </span>
-                                        )}
-                                        {product.isTopSelling && (
-                                            <span className="bg-yellow-500 text-white px-2 py-1 text-xs rounded">
-                                                Top Selling
-                                            </span>
-                                        )}
-                                    </div>
-                                    <div className="flex gap-2">
-                                        <button
-                                            onClick={() => handleEditClick(product)}
-                                            className="w-full bg-blue-500 text-white py-2 rounded-lg hover:bg-blue-600 transition-colors"
-                                        >
-                                            Edit
-                                        </button>
-                                        <button
-                                            onClick={() => handleDeleteProduct(product._id)}
-                                            className="w-full bg-red-500 text-white py-2 rounded-lg hover:bg-red-600 transition-colors"
-                                        >
-                                            Delete
-                                        </button>
-                                    </div>
+                    )}
+
+                    {error && (
+                        <div className="bg-red-100 border-l-4 border-red-500 text-red-700 p-4 mb-6 rounded flex items-center">
+                            <FaExclamationTriangle className="mr-2" />
+                            <p>{error}</p>
+                        </div>
+                    )}
+
+                    {view === "dashboard" && (
+                        <>
+                            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+                                <DashboardCard
+                                    title="Total Products"
+                                    value={totalProducts}
+                                    icon={<FaBoxOpen className="text-blue-500" />}
+                                    color="bg-blue-100"
+                                />
+                                <DashboardCard
+                                    title="Total Orders"
+                                    value={totalOrders}
+                                    icon={<FaShoppingCart className="text-green-500" />}
+                                    color="bg-green-100"
+                                />
+                                <DashboardCard
+                                    title="Total Revenue"
+                                    value={`$${totalRevenue.toLocaleString()}`}
+                                    icon={<FaChartLine className="text-purple-500" />}
+                                    color="bg-purple-100"
+                                />
+                                <DashboardCard
+                                    title="Total Users"
+                                    value={totalUsers}
+                                    icon={<FaUsers className="text-orange-500" />}
+                                    color="bg-orange-100"
+                                />
+                            </div>
+
+                            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
+                                <div className="bg-white p-6 rounded-lg shadow">
+                                    <h3 className="text-lg font-semibold mb-4">Revenue Overview</h3>
+                                    <RevenueChart revenueData={revenueData} />
                                 </div>
-                            ))}
+                                <div className="bg-white p-6 rounded-lg shadow">
+                                    <h3 className="text-lg font-semibold mb-4">Inventory Status</h3>
+                                    <InventoryStatus
+                                        products={products}
+                                        setEditingProduct={setEditingProduct}
+                                        setView={setView} />
+                                </div>
+                            </div>
+
+                            <div className="bg-white p-6 rounded-lg shadow">
+                                <h3 className="text-lg font-semibold mb-4">Recent Orders</h3>
+                                <Orders
+                                    orders={orders.slice(0, 5)}
+                                    handleUpdateOrderStatus={handleUpdateOrderStatus}
+                                    isCompact={true}
+                                />
+                            </div>
+                        </>
+                    )}
+
+                    {view === "add" && (
+                        <AddProductForm
+                            newProduct={newProduct}
+                            setNewProduct={setNewProduct}
+                            editingProduct={editingProduct}
+                            setEditingProduct={setEditingProduct}
+                            setProducts={setProducts}
+                            products={products}
+                            loading={loading}
+                            setLoading={setLoading}
+                            setError={setError}
+                            refreshData={refreshData}
+                            setView={setView}
+                        />
+                    )}
+
+                    {view === "products" && (
+                        <ProductsView
+                            products={products}
+                            setEditingProduct={setEditingProduct}
+                            setView={setView}
+                            handleDeleteProduct={handleDeleteProduct}
+                            loading={loading}
+                            refreshData={refreshData}
+                        />
+                    )}
+
+                    {view === "orders" && (
+                        <Orders
+                            orders={orders}
+                            handleUpdateOrderStatus={handleUpdateOrderStatus}
+                        />
+                    )}
+
+                    {view === "users" && (
+                        <UsersManagement
+                            users={users}
+                            handleUpdateUserRole={handleUpdateUserRole}
+                            handleDeleteUser={handleDeleteUser}
+                        />
+                    )}
+
+                    {view === "settings" && (
+                        <div className="bg-white p-6 rounded-lg shadow">
+                            <h2 className="text-xl font-bold mb-6">Admin Settings</h2>
+                            <div className="space-y-4">
+                                <div className="p-4 border rounded-lg">
+                                    <h3 className="font-semibold mb-2">System Configuration</h3>
+                                    <p className="text-gray-600">Configure system settings here</p>
+                                </div>
+                                <div className="p-4 border rounded-lg">
+                                    <h3 className="font-semibold mb-2">Backup & Restore</h3>
+                                    <p className="text-gray-600">Manage database backups</p>
+                                </div>
+                                <div className="p-4 border rounded-lg">
+                                    <h3 className="font-semibold mb-2">Email Templates</h3>
+                                    <p className="text-gray-600">Customize system emails</p>
+                                </div>
+                            </div>
                         </div>
-                    </div>
-                )}
+                    )}
+                </main>
+            </div>
+        </div>
+    );
+};
+
+const DashboardCard = ({ title, value, icon, color }) => {
+    return (
+        <div className={`${color} p-6 rounded-lg shadow transition-transform hover:scale-105`}>
+            <div className="flex items-center justify-between">
+                <div>
+                    <p className="text-sm font-medium text-gray-600">{title}</p>
+                    <h3 className="text-2xl font-bold mt-1">{value}</h3>
+                </div>
+                <div className="text-3xl">
+                    {icon}
+                </div>
             </div>
         </div>
     );

@@ -1,40 +1,44 @@
 import React from 'react';
+import { FaMapMarkerAlt, FaPhone, FaEnvelope, FaLinkedinIn, FaGithub } from 'react-icons/fa';
 
 const Footer = () => {
     return (
-        <footer className="bg-gray-900 text-white py-12 px-6 mt-8">
-            <div className="max-w-7xl mx-auto grid grid-cols-1 md:grid-cols-3 gap-8">
+        <footer className="bg-gray-900 text-white py-12 px-6">
+            <div className="max-w-7xl mx-auto grid grid-cols-1 md:grid-cols-2 gap-8">
+                {/* Contact Info Section */}
+                <div className="flex flex-col space-y-4">
+                    <div className="flex items-center space-x-3">
+                        <FaMapMarkerAlt className="text-gray-400" />
+                        <p className="text-gray-400">Attock, Pakistan</p>
+                    </div>
+                    <div className="flex items-center space-x-3">
+                        <FaPhone className="text-gray-400" />
+                        <p className="text-gray-400">+92 3149466389</p>
+                    </div>
+                    <div className="flex items-center space-x-3">
+                        <FaEnvelope className="text-gray-400" />
+                        <a href="mailto:sahaal@sashop.com" className="text-blue-500 hover:underline">
+                            sahaal@sashop.com
+                        </a>
+                    </div>
+                </div>
 
+                {/* About the Company Section */}
                 <div>
-                    <h2 className="text-2xl font-bold mb-4">SASHOP</h2>
-                    <p className="text-gray-400">
-                        Providing quality products since 2025. Shop with confidence.
+                    <h3 className="text-lg font-semibold mb-4">About the Company</h3>
+                    <p className="text-gray-400 mb-6">
+                        SASHOP is an e-commerce platform dedicated to selling a wide range of phones, offering the latest models with competitive prices and reliable service.
                     </p>
+                    {/* Social Media Icons */}
+                    <div className="flex space-x-4">
+                        <a href="https://www.linkedin.com/in/sahal-sajeed-aa736721b/" className="bg-gray-700 p-2 rounded-full hover:bg-gray-600 transition">
+                            <FaLinkedinIn className="text-white" />
+                        </a>
+                        <a href="https://github.com/sahaalaf" className="bg-gray-700 p-2 rounded-full hover:bg-gray-600 transition">
+                            <FaGithub className="text-white" />
+                        </a>
+                    </div>
                 </div>
-
-                <div>
-                    <h3 className="text-lg font-semibold mb-4">Quick Links</h3>
-                    <ul className="space-y-2">
-                        <li><a href="#" className="text-gray-400 hover:text-white transition">Home</a></li>
-                        <li><a href="#" className="text-gray-400 hover:text-white transition">Shop</a></li>
-                        <li><a href="#" className="text-gray-400 hover:text-white transition">About Us</a></li>
-                        <li><a href="#" className="text-gray-400 hover:text-white transition">Contact</a></li>
-                    </ul>
-                </div>
-
-                <div>
-                    <h3 className="text-lg font-semibold mb-4">Contact Us</h3>
-                    <p className="text-gray-400">Email: support@sashop.com</p>
-                    <p className="text-gray-400">Phone: (123) 456-7890</p>
-                    <p className="text-gray-400">Address: 123 Commerce St, Web City</p>
-                </div>
-            </div>
-
-            {/* Bottom Bar */}
-            <div className="border-t border-gray-700 mt-8 pt-6 text-center">
-                <p className="text-gray-400 text-sm">
-                    © 2025 SASHOP. All Rights Reserved.
-                </p>
             </div>
         </footer>
     );

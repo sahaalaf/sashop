@@ -17,6 +17,9 @@ import UserProfile from "./pages/UserProfile";
 import { ToastContainer } from "react-toastify";
 import ProductDetails from "./pages/ProductDetails";
 import ErrorBoundary from "./components/ErrorBoundary";
+import OrderConfirmation from "./components/OrderConfirmation";
+import Comparison from "./components/Comparison";
+import InvalidRoute from "./components/InvalidRoute";
 
 const stripePromise = loadStripe("pk_test_51Q04MDLO5gygt3jeimeUtRAVcgfc0fjcyPjU6WYa87auNIyM0rX0VFqtM4TDq5oXOR6Ub8XWuyJ8wpvZo4h5ryol00uHV9Awc4");
 
@@ -54,7 +57,7 @@ function AppContent({ setToken }) {
           {/* Product List Route with Live Search */}
           <Route path="/products" element={<ProductList />} />
           <Route path="/login" element={<Login setToken={setToken} />} />
-          <Route path="/register" element={<Register />} />
+          <Route path="/register" element={<Register setToken={setToken} />} />
           <Route path="/cart" element={<Cart />} />
           <Route
             path="/checkout"
@@ -74,6 +77,9 @@ function AppContent({ setToken }) {
               </ErrorBoundary>
             }
           />
+          <Route path="/order-confirmation/:orderId" element={<OrderConfirmation />} />
+          <Route path="/compare" element={<Comparison />} />
+          <Route path="*" element={<InvalidRoute />} />
         </Routes>
       </main>
 
