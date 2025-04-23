@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import {
     CardNumberElement,
     CardExpiryElement,
@@ -71,6 +71,7 @@ const stripeStyles = `
   }
 `;
 
+
 const Checkout = () => {
     const stripe = useStripe();
     const elements = useElements();
@@ -91,6 +92,9 @@ const Checkout = () => {
         shippingPrice: 5.0,
         totalPrice: 0,
     });
+
+
+    const formRef = useRef();
 
     const backgroundStyle = {
         backgroundImage: `
@@ -401,6 +405,7 @@ const Checkout = () => {
                             {/* Shipping Form */}
                             <div className="lg:w-2/3">
                                 <ShippingForm
+                                    ref={formRef}
                                     onSubmit={handleShippingSubmit}
                                     onFormChange={(info) => setState(prev => ({ ...prev, shippingInfo: info }))}
                                 />
@@ -456,15 +461,13 @@ const Checkout = () => {
                                 <button
                                     type="button"
                                     onClick={() => {
-                                        // Validate the form before proceeding
-                                        const form = document.querySelector('form');
-                                        const isValid = form.checkValidity();
-                                        if (!isValid) {
-                                            // Trigger validation messages
-                                            form.reportValidity();
-                                            return;
+                                        if (formRef.current) {
+                                            const isValid = formRef.current.validate();
+                                            if (isValid) {
+                                                const shippingInfo = formRef.current.getValues();
+                                                handleShippingSubmit(shippingInfo);
+                                            }
                                         }
-                                        handleShippingSubmit(state.shippingInfo);
                                     }}
                                     className="w-full mt-6 flex items-center justify-center px-6 py-3 bg-gray-800 text-white rounded-lg hover:bg-gray-900 disabled:opacity-50 shadow-md transition-colors text-base"
                                 >

@@ -6,7 +6,7 @@ import AddProductForm from "../components/AddProductForm";
 import ProductsView from "../components/ProductsView";
 import Orders from "../components/Orders";
 import RevenueChart from "../components/RevenueChart";
-import UsersManagement from "../context/UsersManagement";
+import UsersManagement from "../components/UsersManagement"
 import InventoryStatus from "../components/InventoryStatus";
 import {
     FaSpinner, FaExclamationTriangle, FaChartLine, FaBoxOpen, FaUsers, FaShoppingCart

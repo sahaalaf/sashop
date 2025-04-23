@@ -22,7 +22,7 @@ const Sidebar = ({ view, setView, stats }) => {
                     <li>
                         <button
                             onClick={() => setView("dashboard")}
-                            className={`w-full flex items-center p-3 rounded-lg transition-colors ${view === "dashboard" ? 'bg-blue-600' : 'hover:bg-gray-700'}`}
+                            className={`w-full flex items-center p-3 rounded-lg transition-colors ${view === "dashboard" ? 'bg-gray-600' : 'hover:bg-gray-700'}`}
                         >
                             <FaTachometerAlt className="mr-3" />
                             Dashboard
@@ -31,7 +31,7 @@ const Sidebar = ({ view, setView, stats }) => {
                     <li>
                         <button
                             onClick={() => setView("products")}
-                            className={`w-full flex items-center p-3 rounded-lg transition-colors ${view === "products" ? 'bg-blue-600' : 'hover:bg-gray-700'}`}
+                            className={`w-full flex items-center p-3 rounded-lg transition-colors ${view === "products" ? 'bg-gray-600' : 'hover:bg-gray-700'}`}
                         >
                             <FaBox className="mr-3" />
                             Products
@@ -40,7 +40,7 @@ const Sidebar = ({ view, setView, stats }) => {
                     <li>
                         <button
                             onClick={() => setView("add")}
-                            className={`w-full flex items-center p-3 rounded-lg transition-colors ${view === "add" ? 'bg-blue-600' : 'hover:bg-gray-700'}`}
+                            className={`w-full flex items-center p-3 rounded-lg transition-colors ${view === "add" ? 'bg-gray-600' : 'hover:bg-gray-700'}`}
                         >
                             <FaPlus className="mr-3" />
                             Add Product
@@ -49,7 +49,7 @@ const Sidebar = ({ view, setView, stats }) => {
                     <li>
                         <button
                             onClick={() => setView("orders")}
-                            className={`w-full flex items-center p-3 rounded-lg transition-colors ${view === "orders" ? 'bg-blue-600' : 'hover:bg-gray-700'}`}
+                            className={`w-full flex items-center p-3 rounded-lg transition-colors ${view === "orders" ? 'bg-gray-600' : 'hover:bg-gray-700'}`}
                         >
                             <FaShoppingCart className="mr-3" />
                             Orders
@@ -58,7 +58,7 @@ const Sidebar = ({ view, setView, stats }) => {
                     <li>
                         <button
                             onClick={() => setView("users")}
-                            className={`w-full flex items-center p-3 rounded-lg transition-colors ${view === "users" ? 'bg-blue-600' : 'hover:bg-gray-700'}`}
+                            className={`w-full flex items-center p-3 rounded-lg transition-colors ${view === "users" ? 'bg-gray-600' : 'hover:bg-gray-700'}`}
                         >
                             <FaUser className="mr-3" />
                             Users
@@ -67,7 +67,7 @@ const Sidebar = ({ view, setView, stats }) => {
                     <li>
                         <button
                             onClick={() => setView("settings")}
-                            className={`w-full flex items-center p-3 rounded-lg transition-colors ${view === "settings" ? 'bg-blue-600' : 'hover:bg-gray-700'}`}
+                            className={`w-full flex items-center p-3 rounded-lg transition-colors ${view === "settings" ? 'bg-gray-600' : 'hover:bg-gray-700'}`}
                         >
                             <FaCog className="mr-3" />
                             Settings

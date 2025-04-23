@@ -1,9 +1,8 @@
-// setAdmin.js
+require("dotenv").config();
 const mongoose = require("mongoose");
 const User = require("./models/userModel");
 
-const mongoURI =
-  "mongodb+srv://sarcasticsahal:ErNGIZxAf9P6Zs5B@cluster0.2x1le.mongodb.net/test?retryWrites=true&w=majority&appName=Cluster0";
+const mongoURI = process.env.MONOGODB_URI;
 
 console.log("MongoDB URI:", mongoURI);
 
@@ -23,7 +22,7 @@ mongoose
       console.log("Existing users:", users);
 
       const result = await User.updateOne(
-        { email: "sahaal@sashop.com" },
+        { email: "sashop@business" },
         { $set: { role: "admin" } }
       );
       console.log("Update result:", result);

@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, forwardRef, useImperativeHandle } from 'react';
 
 const countries = [
     { name: 'Pakistan', code: 'PK' },
@@ -8,7 +8,7 @@ const countries = [
     { name: 'Australia', code: 'AU' },
 ];
 
-const ShippingForm = ({ onSubmit, initialValues, onFormChange }) => {
+const ShippingForm = forwardRef(({ onSubmit, initialValues, onFormChange }, ref) => {
     const [shippingInfo, setShippingInfo] = useState(initialValues || {
         name: '',
         address: '',
@@ -21,6 +21,15 @@ const ShippingForm = ({ onSubmit, initialValues, onFormChange }) => {
     });
 
     const [errors, setErrors] = useState({});
+
+    // Expose validate function to parent via ref
+    useImperativeHandle(ref, () => ({
+        validate: () => {
+            const isValid = validateForm();
+            return isValid;
+        },
+        getValues: () => shippingInfo
+    }));
 
     const handleChange = (e) => {
         const { name, value } = e.target;
@@ -38,10 +47,10 @@ const ShippingForm = ({ onSubmit, initialValues, onFormChange }) => {
     };
 
     const handleCountryChange = (e) => {
-        const selectedCountry = countries.find(c => c.name === e.target.value);
+        const selectedCountry = countries.find(c => c.code === e.target.value);
         const updatedInfo = {
             ...shippingInfo,
-            country: selectedCountry?.name || '',
+            country: selectedCountry?.code || '',
             countryCode: selectedCountry?.code || ''
         };
         setShippingInfo(updatedInfo);
@@ -69,6 +78,14 @@ const ShippingForm = ({ onSubmit, initialValues, onFormChange }) => {
         return Object.keys(newErrors).length === 0;
     };
 
+    const handleSubmit = (e) => {
+        e.preventDefault();
+        const isValid = validateForm();
+        if (isValid && onSubmit) {
+            onSubmit(shippingInfo);
+        }
+    };
+
     // Updated glass effect styles with subtle off-white/light gray tones
     const glassInputStyle = {
         backdropFilter: 'blur(12px)',
@@ -91,7 +108,7 @@ const ShippingForm = ({ onSubmit, initialValues, onFormChange }) => {
     };
 
     return (
-        <div className="space-y-4">
+        <form onSubmit={handleSubmit} className="space-y-4">
             <h3 className="text-xl font-semibold text-gray-800">Shipping Information</h3>
 
             <div className="grid grid-cols-2 gap-4">
@@ -209,8 +226,8 @@ const ShippingForm = ({ onSubmit, initialValues, onFormChange }) => {
                 >
                     <option value="">Select Country</option>
                     {countries.map(country => (
-                        <option key={country.code} value={country.name}>
-                            {country.name}
+                        <option key={country.code} value={country.code}>
+                            {country.code}
                         </option>
                     ))}
                 </select>
@@ -235,8 +252,8 @@ const ShippingForm = ({ onSubmit, initialValues, onFormChange }) => {
                 />
                 {errors.phone && <p className="text-red-500 text-sm">{errors.phone}</p>}
             </div>
-        </div>
+        </form>
     );
-};
+});
 
 export default ShippingForm;

@@ -32,13 +32,13 @@ const Header = () => {
                 </Link>
 
                 <nav className="hidden md:flex space-x-6">
-                    <Link to="/" className="text-gray-700 hover:text-blue-500">
+                    <Link to="/" className="text-gray-700 hover:text-gray-500">
                         Home
                     </Link>
-                    <Link to="/new-arrivals" className="text-gray-700 hover:text-blue-500">
+                    <Link to="/new-arrivals" className="text-gray-700 hover:text-gray-500">
                         New Arrivals
                     </Link>
-                    <Link to="/on-sale" className="text-gray-700 hover:text-blue-500">
+                    <Link to="/on-sale" className="text-gray-700 hover:text-gray-500">
                         On Sale
                     </Link>
                 </nav>
@@ -57,7 +57,7 @@ const Header = () => {
 
                 <div className="flex items-center space-x-6">
                     <Link to="/cart" className="relative">
-                        <FaShoppingCart className="text-2xl text-gray-700 hover:text-blue-500" />
+                        <FaShoppingCart className="text-2xl text-gray-700 hover:text-gray-500" />
                         {cartCount > 0 && (
                             <span className="absolute -top-2 -right-2 bg-red-500 text-white text-xs rounded-full px-1.5 py-0.5">
                                 {cartCount}
@@ -65,7 +65,7 @@ const Header = () => {
                         )}
                     </Link>
                     <Link to="/profile">
-                        <FaUser className="text-2xl text-gray-700 hover:text-blue-500" />
+                        <FaUser className="text-2xl text-gray-700 hover:text-gray-500" />
                     </Link>
                 </div>
             </div>

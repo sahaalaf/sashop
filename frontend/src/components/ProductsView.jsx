@@ -12,7 +12,7 @@ const ProductsView = ({ products, setEditingProduct, setView, handleDeleteProduc
                         setEditingProduct(null);
                         setView("add");
                     }}
-                    className="flex items-center px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 transition-colors"
+                    className="flex items-center px-4 py-2 bg-gray-600 text-white rounded hover:bg-gray-700 transition-colors"
                 >
                     <FaPlus className="mr-2" />
                     Add Product
@@ -21,7 +21,7 @@ const ProductsView = ({ products, setEditingProduct, setView, handleDeleteProduc
 
             {loading && products.length === 0 ? (
                 <div className="flex justify-center items-center py-8">
-                    <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-blue-500"></div>
+                    <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-gray-500"></div>
                 </div>
             ) : (
                 <div className="overflow-x-auto">
@@ -91,7 +91,7 @@ const ProductsView = ({ products, setEditingProduct, setView, handleDeleteProduc
                                             </button>
                                             <Link
                                                 to={`/products/${product._id}`}
-                                                className="text-blue-600 hover:text-blue-900"
+                                                className="text-gray-600 hover:text-gray-900"
                                                 title="View"
                                                 target="_blank"
                                             >
