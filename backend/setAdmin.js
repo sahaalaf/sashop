@@ -17,12 +17,11 @@ mongoose
   .then(async () => {
     console.log("Connected to MongoDB Atlas");
     try {
-      // First, list all users to debug
       const users = await User.find({}, "email username role");
       console.log("Existing users:", users);
 
       const result = await User.updateOne(
-        { email: "sashop@business" },
+        { email: process.env.ADMIN_MAIL },
         { $set: { role: "admin" } }
       );
       console.log("Update result:", result);

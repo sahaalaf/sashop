@@ -1,0 +1,36 @@
+# Node modules
+backend/node_modules/
+frontend/node_modules/
+
+# Environment files
+backend/.env
+frontend/.env
+
+# Logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# OS junk
+.DS_Store
+Thumbs.db
+
+# Build output
+frontend/build/
+backend/dist/
+
+# Coverage
+coverage/
+*.lcov
+
+# Editor folders
+.vscode/
+.idea/
+
+# CSV or data exports
+*.csv
+
+# Optional lock files (uncomment one if you ignore it)
+# package-lock.json
+# yarn.lock
