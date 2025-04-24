@@ -19,8 +19,6 @@ const Orders = ({ orders: initialOrders, isCompact = false }) => {
                 method: 'PUT',
                 headers: {
                     'Content-Type': 'application/json',
-                    // Add your authentication token here if required
-                    // 'Authorization': `Bearer ${yourAuthToken}`
                 },
                 body: JSON.stringify({ status: newStatus })
             });
@@ -114,7 +112,8 @@ const Orders = ({ orders: initialOrders, isCompact = false }) => {
                                 {order.items.length}
                             </td>
                             <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
-                                ${order.totalPrice.toLocaleString()}
+                                ${(order.totalPrice / 100).toLocaleString()}
+
                             </td>
                             <td className="px-6 py-4 whitespace-nowrap">
                                 <div className="flex items-center">

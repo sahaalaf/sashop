@@ -54,7 +54,7 @@ const ProductsView = ({ products, setEditingProduct, setView, handleDeleteProduc
                                         </div>
                                     </td>
                                     <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
-                                        ${product.price.toLocaleString()}
+                                        ${(product.price / 100).toLocaleString()}
                                     </td>
                                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                                         {product.quantity}
